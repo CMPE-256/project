@@ -139,6 +139,13 @@ grouped = grouped.fillna("")
 #display categories within clusters
 print_Categories(grouped, n)
 
+#graph time.Mon 0 and time. Mon 1
+plt.figure(figsize=(13, 11))  
+plt.scatter(train['time.Fri-18'], train['time.Fri-22'], c=train["clusters"], cmap='rainbow')    
+plt.scatter(cluster.cluster_centers_[:,0] ,cluster.cluster_centers_[:,1], color='black') 
+plt.figure(1, figsize=(12,2))
+plt.show()
+
 
 #test wont work for some of the clustering methods since they dont support predict
 print("\n\n---------    training data categories    ---------\n\n")
