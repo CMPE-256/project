@@ -11,13 +11,22 @@ from sklearn.cluster import SpectralClustering
 from sklearn.cluster import DBSCAN
 from sklearn.cluster import Birch
 import operator
+import sys
 
+if(len(sys.argv) < 3):
+	print("ERROR - use: city_cluster.py <city1> <city2>")
+	print("example: python city_cluster.py Las\\ Vegas Phoenix")
+	print("Exiting")
+	exit()
+
+print(sys.argv[1])
+print(sys.argv[2])
 
 #common category tags to ignore
 ignore = ["Restaurants", "Food", "Nightlife"]
 
 #cities to use
-cities = ["Las Vegas", "Phoenix"]
+cities = [sys.argv[1], sys.argv[2]]
 
 #prints the top 5 categories for each cluster
 #grouped is an dataframe with "clusters" from 0 to n and "categories"
@@ -70,39 +79,14 @@ def label_count(labels):
 data = pd.read_csv("cleaned_merged.csv")
 print("data size:", data.shape)
 
+#split data for the 2 cities
 city1 = data.loc[data["city"] == cities[0]]
 city1_c = city1.iloc[:, 12:]
 city1_c = city1_c.fillna(0)
+
 city2 = data.loc[data["city"] == cities[1]]
 city2_c = city2.iloc[:, 12:]
 city2_c = city2_c.fillna(0)
-
-#randomize order of data
-data = data.sample(frac = 1, random_state = 1)
-
-#separate into train and test data
-train = data.iloc[0:35500,:]
-
-#use all data for agg, DBScan, Birch
-train = data
-test = data.iloc[35501:,:]
-
-
-#take small subset for algorithms
-#data = data.sample(n = 25000, random_state = 0)
-
-#separate the checkin data to cluster on
-checkins = train.iloc[:, 12:]
-checkins = checkins.fillna(0)
-#print(checkins.head())
-
-#use to predict a new value with given time
-
-# predict = checkins.iloc[0,:]
-# predict = predict * 0
-# predict["time.Fri-18"] = 1
-# predict = predict.values
-# predict = predict.reshape(1,-1)
 
 #number of clusters to use
 n = 5
@@ -114,8 +98,8 @@ print("clustering data...")
 
 #-------------------------------------------------------------------------------------------
 
-city1_cluster = KMeans(n_clusters = n, random_state = 0).fit(city1_c)
-city2_cluster = KMeans(n_clusters = n, random_state = 0).fit(city2_c)
+city1_cluster = MiniBatchKMeans(n_clusters = n, random_state = 0, batch_size = 500, max_iter = 200).fit(city1_c)
+city2_cluster = MiniBatchKMeans(n_clusters = n, random_state = 0, batch_size = 500, max_iter = 200).fit(city2_c)
 
 #cluster = KMeans(n_clusters = n, random_state = 0).fit(checkins)
 	#works, but has a pretty bad split {0: 40954, 3: 2868, 4: 422, 2: 57, 1: 17}
