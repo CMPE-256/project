@@ -42,7 +42,8 @@ def print_Categories(grouped, n):
 		sorted_x = sorted(cat_list[x].items(), key=lambda kv: kv[1])
 		sorted_x = list(reversed(sorted_x))
 		for y in range(5):
-			print(sorted_x[y])
+			if(y < len(sorted_x)):
+				print(sorted_x[y])
 	return
 
 
@@ -102,9 +103,9 @@ print("clustering data...")
 
 #-------------------------------------------------------------------------------------------
 
-cluster = KMeans(n_clusters = n, random_state = 0).fit(checkins)
+#cluster = KMeans(n_clusters = n, random_state = 0).fit(checkins)
 	#works, but has a pretty bad split {0: 40954, 3: 2868, 4: 422, 2: 57, 1: 17}
-#cluster = MiniBatchKMeans(n_clusters = n, random_state = 0, batch_size = 500, max_iter = 200).fit(checkins)
+cluster = MiniBatchKMeans(n_clusters = n, random_state = 0, batch_size = 500, max_iter = 200).fit(checkins)
 	#probably the best one good spread {0: 8379, 2: 26735, 4: 4450, 1: 3669, 3: 1085}
 
 #test these methods
