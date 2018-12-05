@@ -101,6 +101,9 @@ print("clustering data...")
 city1_cluster = MiniBatchKMeans(n_clusters = n, random_state = 0, batch_size = 500, max_iter = 200).fit(city1_c)
 city2_cluster = MiniBatchKMeans(n_clusters = n, random_state = 0, batch_size = 500, max_iter = 200).fit(city2_c)
 
+#city1_cluster = Birch(n_clusters = n).fit(city1_c)
+#city2_cluster = Birch(n_clusters = n).fit(city2_c)
+
 #cluster = KMeans(n_clusters = n, random_state = 0).fit(checkins)
 	#works, but has a pretty bad split {0: 40954, 3: 2868, 4: 422, 2: 57, 1: 17}
 #cluster = MiniBatchKMeans(n_clusters = n, random_state = 0, batch_size = 500, max_iter = 200).fit(checkins)
@@ -134,10 +137,10 @@ label_count(lc_labels)
 #attach the clusters to other data
 city1["clusters"] = lc_labels
 info = ["categories", "name", "clusters"]
-grouped = city1[info]
-grouped = grouped.fillna("")
+grouped1 = city1[info]
+grouped1 = grouped1.fillna("")
 #display categories within clusters
-print_Categories(grouped, n)
+print_Categories(grouped1, n)
 
 print("\n-----------------------------------")
 
@@ -148,10 +151,29 @@ label_count(p_labels)
 #attach the clusters to other data
 city2["clusters"] = p_labels
 info = ["categories", "name", "clusters"]
-grouped = city2[info]
-grouped = grouped.fillna("")
+grouped2 = city2[info]
+grouped2 = grouped2.fillna("")
 #display categories within clusters
-print_Categories(grouped, n)
+print_Categories(grouped2, n)
+
+
+print("\n\nIn", cities[1], " recommend restaurant categories for a specific time.")
+pred = input("Enter time in form of <day>-<hour>: ")
+
+predict_time = "time." + pred
+
+
+#for predicting a new value with given time
+predict = city1_c.iloc[0,:]
+predict = predict * 0
+predict[predict_time] = 500
+predict = predict.values
+predict = predict.reshape(1,-1)
+
+temp = city1_cluster.predict(predict)
+
+print("The cluster that your time belongs to is", temp[0])
+print("See above for recommendations for categories")
 
 
 

@@ -10,6 +10,7 @@ from sklearn.cluster import AgglomerativeClustering
 from sklearn.cluster import SpectralClustering
 from sklearn.cluster import DBSCAN
 from sklearn.cluster import Birch
+from sklearn.metrics import confusion_matrix
 import operator
 
 
@@ -71,10 +72,9 @@ print("data size:", data.shape)
 data = data.sample(frac = 1, random_state = 1)
 
 #separate into train and test data
-#train = data.iloc[0:35500,:]
+train = data.iloc[0:35500,:]
 
 #use all data for agg, DBScan, Birch
-train = data
 test = data.iloc[35501:,:]
 
 
@@ -84,6 +84,10 @@ test = data.iloc[35501:,:]
 #separate the checkin data to cluster on
 checkins = train.iloc[:, 12:]
 checkins = checkins.fillna(0)
+
+full_checkins = data.iloc[:, 12:]
+full_checkins = full_checkins.fillna(0)
+
 #print(checkins.head())
 
 #for predicting a new value with given time
@@ -105,6 +109,7 @@ print("clustering data...")
 
 #cluster = KMeans(n_clusters = n, random_state = 0).fit(checkins)
 	#works, but has a pretty bad split {0: 40954, 3: 2868, 4: 422, 2: 57, 1: 17}
+full = MiniBatchKMeans(n_clusters = n, random_state = 0, batch_size = 500, max_iter = 200).fit(full_checkins)
 cluster = MiniBatchKMeans(n_clusters = n, random_state = 0, batch_size = 500, max_iter = 200).fit(checkins)
 	#probably the best one good spread {0: 8379, 2: 26735, 4: 4450, 1: 3669, 3: 1085}
 
@@ -121,6 +126,7 @@ cluster = MiniBatchKMeans(n_clusters = n, random_state = 0, batch_size = 500, ma
 
 #-------------------------------------------------------------------------------------------
 
+full_labels = full.labels_
 labels = cluster.labels_
 
 end = timer()
@@ -140,12 +146,12 @@ grouped = grouped.fillna("")
 #display categories within clusters
 print_Categories(grouped, n)
 
-#graph time.Mon 0 and time. Mon 1
-plt.figure(figsize=(13, 11))  
-plt.scatter(train['time.Fri-18'], train['time.Fri-22'], c=train["clusters"], cmap='rainbow')    
-plt.scatter(cluster.cluster_centers_[:,0] ,cluster.cluster_centers_[:,1], color='black') 
-plt.figure(1, figsize=(12,2))
-plt.show()
+# #graph time.Mon 0 and time. Mon 1
+# plt.figure(figsize=(13, 11))  
+# plt.scatter(train['time.Fri-18'], train['time.Fri-22'], c=train["clusters"], cmap='rainbow')    
+# plt.scatter(cluster.cluster_centers_[:,0] ,cluster.cluster_centers_[:,1], color='black') 
+# plt.figure(1, figsize=(12,2))
+# plt.show()
 
 
 #test wont work for some of the clustering methods since they dont support predict
@@ -162,6 +168,27 @@ grouped = test[info]
 grouped = grouped.fillna("")
 
 print_Categories(grouped, n)
+
+
+print("\n\n Confusion Matrix\n\n")
+
+#data["clusters"] = full_labels
+data = data.assign(clusters = full_labels)
+info = ["NA", "clusters"]
+all_c = data[info]
+
+test_c = test[info]
+
+true_c_val = []
+test_c_val = predict_labels
+
+
+for index, row in test_c.iterrows():
+	x = all_c.loc[all_c["NA"] == row["NA"]]
+	true_c_val.append(x["clusters"].values[0])
+
+
+print(confusion_matrix(true_c_val, test_c_val))
 
 
 
