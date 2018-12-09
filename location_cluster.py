@@ -59,8 +59,9 @@ def label_count(labels):
 		else:
 			lab_count[x] = 1
 
-	print(lab_count)
-
+	print("dictionary length:", len(lab_count))
+	for k, v in lab_count.items():
+		print(k,"\t",v)
 	return
 
 
@@ -77,28 +78,32 @@ train = data.iloc[0:35500,:]
 #use all data for agg, DBScan, Birch
 test = data.iloc[35501:,:]
 
+#cities = data.loc[:, "city"]
+#label_count(cities)
+
+
 
 #take small subset for algorithms
 #data = data.sample(n = 25000, random_state = 0)
 
 #separate the checkin data to cluster on
-checkins = train.iloc[:, 12:]
-checkins = checkins.fillna(0)
+lat_lon = train.iloc[:, 6:7]
+lat_lon = lat_lon.fillna(0)
 
-full_checkins = data.iloc[:, 12:]
-full_checkins = full_checkins.fillna(0)
+full_lat_lon = data.iloc[:, 6:7]
+full_lat_lon = full_lat_lon.fillna(0)
 
-#print(checkins.head())
+#print(lat_lon.head())
 
 #for predicting a new value with given time
-# predict = checkins.iloc[0,:]
+# predict = lat_lon.iloc[0,:]
 # predict = predict * 0
 # predict["time.Fri-18"] = 1
 # predict = predict.values
 # predict = predict.reshape(1,-1)
 
 #number of clusters to use
-n = 5
+n = 20
 
 print("loaded data")
 start = timer()
@@ -107,21 +112,23 @@ print("clustering data...")
 
 #-------------------------------------------------------------------------------------------
 
-#cluster = KMeans(n_clusters = n, random_state = 0).fit(checkins)
+#cluster = KMeans(n_clusters = n, random_state = 0).fit(lat_lon)
 	#works, but has a pretty bad split {0: 40954, 3: 2868, 4: 422, 2: 57, 1: 17}
-full = MiniBatchKMeans(n_clusters = n, random_state = 0, batch_size = 500, max_iter = 200).fit(full_checkins)
-cluster = MiniBatchKMeans(n_clusters = n, random_state = 0, batch_size = 500, max_iter = 200).fit(checkins)
+full = KMeans(n_clusters = n, random_state = 0).fit(full_lat_lon)
+cluster = KMeans(n_clusters = n, random_state = 0).fit(lat_lon)
+
+#full = DBSCAN(eps = 5, min_samples = 10).fit(lat_lon)
 	#probably the best one good spread {0: 8379, 2: 26735, 4: 4450, 1: 3669, 3: 1085}
 
 #test these methods
 
-#cluster = AgglomerativeClustering(n_clusters=n, affinity='euclidean', linkage='ward').fit(checkins)
+#cluster = AgglomerativeClustering(n_clusters=n, affinity='euclidean', linkage='ward').fit(lat_lon)
 	#agg works with 25000, 92 sec, but pretty bad results, {2: 22491, 0: 2304, 4: 170, 3: 29, 1: 6}
-#cluster = DBSCAN(eps = 5, min_samples = 10).fit(checkins)
+#cluster = DBSCAN(eps = 5, min_samples = 10).fit(lat_lon)
 	#extremely slow for 25000, 173 sec, only outputs 2 categories {-1: 16778, 0: 8222}
-#cluster = Birch(n_clusters = n).fit(checkins)
+#cluster = Birch(n_clusters = n).fit(lat_lon)
 	#Birch works with 25000, 100 sec, but uses agg clustering?
-#cluster = SpectralClustering(n_clusters = n, random_state = 0, affinity = "nearest_neighbors").fit(checkins)
+#cluster = SpectralClustering(n_clusters = n, random_state = 0, affinity = "nearest_neighbors").fit(lat_lon)
 	#doesnt work?
 
 #-------------------------------------------------------------------------------------------
@@ -143,6 +150,12 @@ info = ["categories", "name", "clusters"]
 grouped = train[info]
 grouped = grouped.fillna("")
 
+info = ["latitude", "longitude", "clusters"]
+#use for visualization
+visualization_data = train[info]
+visualization_data = visualization_data.fillna("")
+
+#print(grouped.head())
 #display categories within clusters
 print_Categories(grouped, n)
 
@@ -155,40 +168,42 @@ print_Categories(grouped, n)
 
 
 #test wont work for some of the clustering methods since they dont support predict
-print("\n\n---------    training data categories    ---------\n\n")
 
-test_checkins = test.iloc[:, 12:]
-test_checkins = test_checkins.fillna(0)
-predict_labels = cluster.predict(test_checkins)
-test["clusters"] = predict_labels
-print("\n\nClusters:")
-label_count(predict_labels)
+# print("\n\n---------    training data categories    ---------\n\n")
 
-grouped = test[info]
-grouped = grouped.fillna("")
+# test_lat_lon = test.iloc[:, 6:7]
+# test_lat_lon = test_lat_lon.fillna(0)
+# predict_labels = full.predict(test_lat_lon)
+# test["clusters"] = predict_labels
+# print("\n\nClusters:")
+# label_count(predict_labels)
 
-print_Categories(grouped, n)
+# grouped = test[info]
+# grouped = grouped.fillna("")
 
-
-print("\n\n Confusion Matrix\n\n")
-
-#data["clusters"] = full_labels
-data = data.assign(clusters = full_labels)
-info = ["NA", "clusters"]
-all_c = data[info]
-
-test_c = test[info]
-
-true_c_val = []
-test_c_val = predict_labels
+# print_Categories(grouped, n)
 
 
-for index, row in test_c.iterrows():
-	x = all_c.loc[all_c["NA"] == row["NA"]]
-	true_c_val.append(x["clusters"].values[0])
+# print("\n\n Confusion Matrix\n\n")
+
+# #data["clusters"] = full_labels
+# data = data.assign(clusters = full_labels)
+# info = ["NA", "clusters"]
+# all_c = data[info]
+
+# test_c = test[info]
+
+# true_c_val = []
+# test_c_val = predict_labels
 
 
-print(confusion_matrix(true_c_val, test_c_val))
+# for index, row in test_c.iterrows():
+# 	x = all_c.loc[all_c["NA"] == row["NA"]]
+# 	true_c_val.append(x["clusters"].values[0])
+
+
+# print(confusion_matrix(true_c_val, test_c_val))
+
 
 
 
